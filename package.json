@@ -1,0 +1,31 @@
+{
+  "name": "high-performace-news-aggregator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Surya2004-janardhan/High-Performance-News-Aggregator-with-React.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Surya2004-janardhan/High-Performance-News-Aggregator-with-React/issues"
+  },
+  "homepage": "https://github.com/Surya2004-janardhan/High-Performance-News-Aggregator-with-React#readme",
+  "dependencies": {
+    "@tanstack/react-virtual": "^3.13.24",
+    "@vitejs/plugin-react": "^6.0.1",
+    "axios": "^1.16.0",
+    "lodash": "^4.18.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "vite": "^8.0.11"
+  }
+}
