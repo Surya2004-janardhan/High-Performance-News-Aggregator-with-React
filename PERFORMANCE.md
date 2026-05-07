@@ -9,7 +9,7 @@ This document tracks the performance measurements and optimizations for the Hack
 | **LCP (Largest Contentful Paint)** | ~8.5s (Estimated) | Large, unoptimized hero image (2MB+) blocking the main thread and taking long to download. | Compress image to WebP, use `srcset`, and add `width`/`height` attributes. |
 | **INP (Interaction to Next Paint)** | ~1200ms (Estimated) | Re-rendering 500+ DOM nodes on every keystroke in the filter input. | Implement list virtualization using `@tanstack/react-virtual`. |
 | **CLS (Cumulative Layout Shift)** | ~0.45 (Estimated) | Hero image loading without dimensions, causing content to jump once loaded. | Add explicit `width` and `height` to the `<img>` tag. |
-| **Bundle Size (main.js)** | ~1.5MB (Estimated) | Importing the entire `lodash` library and lack of code splitting. | Use cherry-picked imports for `lodash` and implement `React.lazy`. |
+| **Bundle Size (main.js)** | ~1.5MB (Estimated) | Importing the entire `lodash` library and lack of code splitting. | Use cherry-picked imports for `lodash`, implement `React.lazy`, and use TypeScript for better tree-shaking. |
 | **Network Waterfall** | 501 serial requests | Sequential fetching of 500 stories in a `for` loop. | Parallelize data fetching with `Promise.all`. |
 
 ## Phase 2: Systematic Optimization
