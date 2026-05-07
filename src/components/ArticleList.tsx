@@ -4,11 +4,12 @@ import { HNItem } from '../types';
 
 interface ArticleItemProps {
   article: HNItem;
-  style: React.CSSProperties & { transform: number };
+  height: number;
+  transform: number;
 }
 
 // Optimized: ArticleItem component with React.memo
-const ArticleItem: React.FC<ArticleItemProps> = React.memo(({ article, style }) => {
+const ArticleItem: React.FC<ArticleItemProps> = React.memo(({ article, height, transform }) => {
   // Optimized: Single Intl.DateTimeFormat instance would be better, but let's use a memoized one or just pre-format
   const formattedDate = useMemo(() => {
     return new Date(article.time * 1000).toLocaleString();
@@ -23,8 +24,8 @@ const ArticleItem: React.FC<ArticleItemProps> = React.memo(({ article, style }) 
         top: 0,
         left: 0,
         width: '100%',
-        height: `${style.height}`,
-        transform: `translateY(${style.transform}px)`,
+        height: `${height}px`,
+        transform: `translateY(${transform}px)`,
         padding: '1.5rem',
         boxSizing: 'border-box'
       }}
@@ -78,11 +79,9 @@ const ArticleList: React.FC<ArticleListProps> = ({ articles }) => {
         {rowVirtualizer.getVirtualItems().map((virtualItem) => (
           <ArticleItem
             key={virtualItem.key}
-            article={articles[virtualItem.index]}
-            style={{
-              height: virtualItem.size,
-              transform: virtualItem.start,
-            }}
+            article={articles[virtualItem.index]!}
+            height={virtualItem.size}
+            transform={virtualItem.start}
           />
         ))}
       </div>
