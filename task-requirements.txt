@@ -1,0 +1,263 @@
+Objective
+You will build a news aggregator application, first in a deliberately unoptimized state, and then systematically refactor it for high performance. You will learn to use professional-grade profiling tools like Lighthouse and Chrome DevTools to diagnose and fix common performance bottlenecks related to Core Web Vitals (LCP, INP, CLS). This task is crucial for building modern web applications where performance directly impacts user engagement and SEO ranking.
+
+Description
+1. Project Background and Core Concepts
+Welcome to a practical exercise in web performance engineering. In the real world, developers are often tasked with improving existing codebases that have accumulated "performance debt" over time. This project simulates that exact scenario. You will first construct a React-based news aggregator that is intentionally slow, buggy, and inefficient. Then, you will put on your performance engineer hat to methodically identify, measure, and eliminate bottlenecks. The goal is not just to make it fast but to understand why it was slow and how each specific optimization contributes to a better user experience.
+
+This task revolves around Google's Core Web Vitals (CWV), a set of metrics that measure real-world user experience for loading performance, interactivity, and visual stability. Mastering these is non-negotiable for modern frontend developers.
+
+Key Concepts Explained
+Largest Contentful Paint (LCP): This metric reports the render time of the largest image or text block visible within the viewport. A good LCP score (under 2.5 seconds) tells the user that the page is loading correctly and the main content is available. In our app, the LCP element will likely be the large hero image or the main block of articles.
+
+Interaction to Next Paint (INP): INP is a new metric that assesses a page's overall responsiveness to user interactions. It measures the latency of all click, tap, and keyboard interactions. A low INP (under 200 milliseconds) ensures the UI feels fluid and responsive. We will focus on the interactions for filtering and sorting the news articles.
+
+Cumulative Layout Shift (CLS): CLS measures visual stability by quantifying how much unexpected layout shifts occur during the page's entire lifecycle. A good score (under 0.1) means the page is stable and doesn't have content that jarringly moves around as it loads. This is often caused by images without dimensions, ads, or content being dynamically injected.
+
+Performance Profiling Tools:
+
+Lighthouse: An open-source, automated tool for improving the quality of web pages. You can run it against any web page, public or requiring authentication. It has audits for performance, accessibility, progressive web apps, SEO, and more. We will use it for our high-level performance scores.
+Chrome DevTools (Performance Panel): This is your microscope. It provides a detailed, frame-by-frame breakdown of everything the browser is doing: loading resources, parsing HTML, executing JavaScript, calculating styles, painting, and more. It's essential for diagnosing complex issues like long tasks that block the main thread and hurt INP.
+2. Phase 1: Building the Intentionally "Slow" Application
+Your first task is to build the application with a specific set of anti-patterns. This is a critical step to create a baseline for your optimization work. You will use the free and public HackerNews API.
+
+Application Features:
+Display the top 500 stories from HackerNews.
+Show each story's title, score, author (by), and a link to the original article.
+Include a text input to filter articles by title.
+Include a button to sort articles by score.
+A large, unoptimized hero image at the top of the page.
+Implementation Anti-Patterns (To Be Implemented):
+Network Waterfall (N+1 Requests): First, fetch the list of top story IDs from https://hacker-news.firebaseio.com/v0/topstories.json. Then, inside a loop, fetch the details for each story one by one using https://hacker-news.firebaseio.com/v0/item/{id}.json. This creates a massive network waterfall and is a primary performance killer.
+
+Pseudocode Example:
+
+// In a React component
+useEffect(() => {
+  const fetchAllStories = async () => {
+    const response = await fetch('.../topstories.json');`
+    const storyIds = await response.json();
+    const stories = [];
+    // Anti-pattern: sequential fetching in a loop
+    for (const id of storyIds.slice(0, 500)) {
+      const storyResp = await fetch(`.../item/${id}.json`);
+      const storyData = await storyResp.json();
+      stories.push(storyData);
+    }
+    setArticles(stories);
+  };
+  fetchAllStories();
+}, []);
+No List Virtualization: Render the entire list of 500+ articles directly into the DOM. This will create an enormous number of DOM nodes, leading to high memory usage and slow rendering and re-rendering, severely impacting INP when filtering or sorting.
+
+Inefficient Dependency Usage: Import the entire lodash library to use just one or two functions (e.g., debounce or sortBy). Do not use cherry-picked imports.
+
+Code Example:
+
+import _ from 'lodash';
+// ...
+const sortedArticles = _.sortBy(articles, 'score');
+Expensive Computations in Render: Use an expensive, un-memoized function call inside your article component's render method. For example, format a timestamp using new Date(timestamp * 1000).toLocaleString() for every single item on every render.
+
+Unoptimized Images: Find a large hero image online (at least 2MB). Include it at the top of your page with a simple <img> tag. Do not add width, height, srcset, or loading="lazy" attributes. This will negatively impact LCP and CLS.
+
+No Code Splitting: Use a standard create-react-app or Vite setup without implementing any route-based or component-based code splitting. Everything should be in one large initial JavaScript bundle.
+
+At the end of this phase, you should have a functioning but noticeably slow application. Commit this version to a separate Git branch called slow-version.
+
+3. Phase 2: Establishing a Performance Baseline
+Before you write a single line of optimization code, you must measure. Without a baseline, you cannot prove that your changes had a positive impact.
+
+How to Measure:
+Run Lighthouse: Open Chrome DevTools, go to the Lighthouse tab, select "Performance", and generate a report for your running application. Save a screenshot or a JSON export of this report. Pay close attention to the LCP, TBT (Total Blocking Time, which correlates with INP), and CLS scores.
+Use Chrome DevTools Performance Panel:
+Go to the "Performance" tab.
+Click the record button (or Ctrl+E).
+Perform an action, like typing in the filter input or clicking the sort button.
+Stop the recording.
+Analyze the flame chart. Look for long tasks (indicated with a red triangle), which are periods where the main thread was blocked for over 50ms. These are your primary targets for improving INP.
+Documenting Your Findings
+Create a file named PERFORMANCE.md in the root of your project. In this file, create a markdown table to document your baseline and your plan. This document will be your single source of truth for this project.
+
+Baseline Performance Report Table (PERFORMANCE.md)
+
+Metric / Issue	Baseline Score / Observation	Root Cause Analysis	Proposed Solution Hypothesis
+LCP	(e.g., 8.5s)	Large, unoptimized hero image blocking the main thread.	Compress image, serve in WebP format, use srcset, and lazy load.
+INP (from TBT)	(e.g., TBT: 1200ms) and observed lag on input.	Re-rendering 500+ DOM nodes on every keystroke in the filter.	Implement list virtualization to only render visible items.
+CLS	(e.g., 0.45)	Hero image loading without dimensions, pushing content down.	Add explicit width and height attributes to the <img> tag.
+Bundle Size (main.js)	(e.g., 1.5MB)	Importing full lodash library; no code splitting.	Use cherry-picked imports for lodash; implement code splitting.
+Network Waterfall	(e.g., 501 serial requests observed in Network tab)	Sequential fetch calls in a for loop.	Parallelize data fetching with Promise.all.
+4. Phase 3: Systematic Optimization
+Now, implement your proposed solutions one by one. This is crucial: make one change, then measure again. This isolates the impact of each optimization. Update your PERFORMANCE.md file after each step with the new measurements to track your progress.
+
+Optimization Steps:
+Parallelize Network Requests:
+
+Why: Instead of waiting for each of the 500 detail requests to finish sequentially, you can fire them all off in parallel. This dramatically reduces the total data-fetching time.
+How: Refactor your data fetching logic to use Promise.all. Fetch the list of IDs first, then map over the array of IDs to create an array of promises, and pass that array to Promise.all.
+Data Flow Architecture Diagram:
+
+Expand
+graph TD subgraph Initial Waterfall Flow A[Start] --> B{Fetch Story IDs}; B --> C{Loop 1..500}; C --> D1[Fetch Story 1]; D1 --> D2[Fetch Story 2]; D2 --> D_N[...Fetch Story 500]; D_N --> E[Render UI]; end
+
+subgraph Optimized Parallel Flow
+    F[Start] --> G{Fetch Story IDs};
+    G --> H{Map IDs to Promises};
+    H --> I[Promise.all(fetches)];
+    I --> J[Render UI];
+end
+```
+2. Implement List Virtualization: * Why: Rendering hundreds or thousands of elements is computationally expensive. Virtualization renders only the items currently visible in the viewport (plus a small buffer), keeping the DOM small and interactions fast. * How: Use a library like @tanstack/react-virtual. You will provide it with the total number of items, the size of each item, and a render callback. The library then gives you the necessary styles and items to render.
+
+Optimize Dependencies and Expensive Calculations:
+
+Why: Large dependencies bloat your bundle size, increasing download and parse times. Un-memoized expensive calculations in the render path cause slow re-renders.
+How:
+Change import _ from 'lodash' to import sortBy from 'lodash/sortBy'. Use a bundle analyzer (like rollup-plugin-visualizer for Vite) to confirm the change.
+For the date formatting, create a single Intl.DateTimeFormat instance outside your component and reuse it. Or, wrap the calculation in useMemo within your component.
+Strategically apply React.memo to your ArticleItem component to prevent re-renders when its props haven't changed. Be prepared to document cases where memoization doesn't help or even adds overhead.
+Optimize Image Delivery:
+
+Why: Images are often the largest assets on a page. Proper optimization is key to a good LCP and CLS score.
+How:
+Compress your hero image. Use a tool like Squoosh to convert it to a modern format like WebP and reduce its file size.
+Add explicit width and height attributes to the <img> tag to prevent layout shifts.
+Use the srcset attribute to provide different image sizes for different viewport widths.
+Add loading="lazy" to defer the loading of off-screen images (though for the main hero image, you might want it to load eagerly).
+Implement Code Splitting:
+
+Why: Reduces the size of the initial JavaScript payload, leading to a faster Time to Interactive (TTI).
+How: If your app had multiple pages, you would use route-based code splitting. For a single-page app like this, you can still split out heavy components that are not immediately needed. Use React.lazy and Suspense to split a non-critical component (e.g., a modal or a secondary feature) into a separate chunk.
+After each of these steps, re-run Lighthouse and the Performance profiler, and meticulously document the results in PERFORMANCE.md.
+
+5. Final Deliverables & Documentation
+Your submission will be judged not just on the final performance score but on the quality of your process and documentation.
+
+Code: The final, optimized code should be on the main or master branch.
+Slow Version: The initial, unoptimized code must be on a branch named slow-version.
+README.md: A high-quality README with:
+A description of the project.
+Clear instructions on how to install dependencies and run the project locally (for both the slow and fast versions).
+PERFORMANCE.md: The completed performance audit file containing:
+The initial baseline measurements table.
+A section for each optimization, detailing the change made and the before-and-after metrics. Explain why the metric improved.
+6. FAQ
+Q: Why do I have to build the slow version first?
+
+A: This is fundamental to performance work. Without a concrete "before" state, you cannot scientifically measure the impact of your "after" state. It forces you to understand the cause of a problem before you can apply the correct solution.
+Q: What if React.memo or useMemo makes performance worse?
+
+A: This is an excellent observation! Memoization is not free; it adds overhead for checking props and managing cached values. If a component re-renders very frequently with different props anyway, the cost of memoization can be greater than the cost of re-rendering. Document this finding in your PERFORMANCE.md—it demonstrates a deep understanding of React's render lifecycle.
+Q: How can I reliably measure INP?
+
+A: INP is a field metric, meaning it's best measured with real user data. For lab testing, the best correlate is Total Blocking Time (TBT) from a Lighthouse report. You can also use the Chrome DevTools Performance panel to identify long tasks that occur after user input (e.g., typing in a filter box). These long tasks are what cause poor INP.
+Core Requirements
+1.
+The project must be containerized using Docker and orchestrated with Docker Compose. A docker-compose up command should build and start the application, making it accessible in a web browser.
+
+Contract:
+
+A docker-compose.yml file must be present in the repository root.
+At least one Dockerfile must be present.
+The docker-compose up command must successfully start a web server serving the application on a specified port.
+The application service in docker-compose.yml must include a healthcheck.
+Verification:
+
+Check for the existence of docker-compose.yml and Dockerfile.
+Run docker-compose up -d --build.
+Verify that all services become healthy within 2 minutes.
+Make an HTTP GET request to the specified port (e.g., http://localhost:3000) and expect a 200 OK response with HTML content.
+2.
+A Git branch named slow-version must exist in the repository. This branch must contain the initial, unoptimized version of the application, demonstrating the anti-patterns described in Phase 1.
+
+Contract:
+
+A branch named exactly slow-version must be present in the Git history.
+Verification:
+
+Run git ls-remote --heads origin or git branch -r.
+Verify that origin/slow-version exists in the output.
+3.
+A detailed performance report file named PERFORMANCE.md must be present in the root of the repository.
+
+Contract:
+
+A file named exactly PERFORMANCE.md must exist at the project root.
+The file must contain markdown content, including at least one table.
+Verification:
+
+Check for the existence of PERFORMANCE.md at the repository root.
+Verify the file is not empty and contains the markdown syntax for a table (|).
+4.
+An .env.example file must be present in the repository root, documenting all necessary environment variables for the application to run.
+
+Contract:
+
+A file named .env.example must exist at the project root.
+It should contain key-value pairs for environment variables, such as PORT.
+Verification:
+
+Check for the existence of .env.example.
+Parse the file to ensure it contains at least one variable assignment (e.g., PORT=3000).
+5.
+The main hero image in the final optimized application must use modern optimization attributes.
+
+Contract:
+
+The primary <img> element, identifiable with data-testid="hero-image", must be present.
+This element must have width, height, and srcset attributes.
+Verification:
+
+Start the optimized application.
+Use a browser automation tool (like Playwright) to navigate to the main page.
+Locate the element with data-testid="hero-image".
+Assert that the element has non-empty width, height, and srcset attributes.
+6.
+The list of news articles must be rendered using virtualization to maintain a small DOM size.
+
+Contract:
+
+The container for the article list should have a data-testid="article-list".
+The number of direct child elements within this container that represent articles (e.g., having data-testid="article-item") must be significantly less than the total number of articles (500).
+Verification:
+
+Start the optimized application.
+Use a browser automation tool to navigate to the main page.
+Wait for the article list to be populated.
+Count the number of elements with data-testid="article-item" inside the data-testid="article-list" container.
+Assert that the count is less than 50 (a reasonable buffer for a virtualized list).
+7.
+The production build of the application must produce multiple JavaScript chunks, demonstrating that code splitting is in use.
+
+Contract:
+
+The production build output directory (e.g., build/static/js or dist/assets) must exist after running the build script.
+This directory must contain more than one .js file.
+Verification:
+
+Run the production build command specified in package.json (e.g., npm run build).
+After the build completes, list the contents of the JavaScript output directory.
+Verify that there are at least two distinct .js files (e.g., main.[hash].js and 1.[hash].js).
+8.
+The final production bundle must not include the entire lodash library. Only the imported modules should be present.
+
+Contract:
+
+The source code must demonstrate cherry-picked imports (e.g., import sortBy from 'lodash/sortBy').
+A bundle analysis report file must be generated at build time, e.g., stats.html.
+Verification:
+
+Run the production build command.
+Check for the existence of a stats.html or similar bundle analysis report.
+(Alternative) Grep the final bundled JavaScript files for a string unique to an unimported lodash function (e.g., isEqual). The string should not be found.
+Submission Instructions
+Your submission must be a Git repository containing all your code and documentation. Please ensure the following artifacts are present:
+
+Application Code: The complete source code for your React application, with the final optimized version on the main or master branch.
+slow-version Branch: A Git branch named exactly slow-version containing the initial, unoptimized implementation.
+PERFORMANCE.md: A detailed markdown file in the root directory documenting your entire performance audit process as described in the task.
+README.md: A high-quality README file with project setup and running instructions.
+docker-compose.yml and Dockerfile: A Docker setup to containerize and serve your production-built application. docker-compose up should start the service.
+.env.example: This file must be present and document all environment variables required to run your application (e.g., PORT). Do not include any real secrets.
+Evaluation Overview
+Your submission will be evaluated based on several criteria. First, we will run an automated test suite to verify the functional requirements defined in the 'Core Requirements' section. This includes checking your Docker configuration, the existence of required artifacts like PERFORMANCE.md, and the implementation of specific optimizations via browser automation. Second, your code will undergo automated code analysis to assess its quality, structure, and adherence to best practices. Finally, your documentation, particularly the README.md and the analysis in PERFORMANCE.md, will be reviewed to gauge the clarity and thoughtfulness of your process. Ensure your repository is well-organized and your setup instructions are clear.
