@@ -56,13 +56,13 @@ const App: React.FC = () => {
     <div className="container">
       {/* Optimized: Modern image attributes */}
       <img 
-        src="/hero.png" 
+        src="/hero.webp" 
         className="hero-image" 
         alt="Hero" 
         data-testid="hero-image"
         width="1200"
         height="1200"
-        srcSet="/hero.png 600w, /hero.png 1200w"
+        srcSet="/hero-small.webp 600w, /hero.webp 1200w"
         sizes="(max-width: 600px) 600px, 1200px"
       />
       

@@ -8,7 +8,6 @@ export default defineConfig({
     react(),
     visualizer({
       filename: 'stats.html',
-      open: false,
       gzipSize: true,
       brotliSize: true,
     }),
@@ -16,14 +15,5 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-        },
-      },
-    },
   },
 });
