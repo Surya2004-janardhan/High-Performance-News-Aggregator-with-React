@@ -1,1 +1,4 @@
 task-requirements.txt
+node_modules
+.env
+dist

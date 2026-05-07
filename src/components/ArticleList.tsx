@@ -1,8 +1,14 @@
 import React, { useRef, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { HNItem } from '../types';
+
+interface ArticleItemProps {
+  article: HNItem;
+  style: React.CSSProperties & { transform: number };
+}
 
 // Optimized: ArticleItem component with React.memo
-const ArticleItem = React.memo(({ article, style }) => {
+const ArticleItem: React.FC<ArticleItemProps> = React.memo(({ article, style }) => {
   // Optimized: Single Intl.DateTimeFormat instance would be better, but let's use a memoized one or just pre-format
   const formattedDate = useMemo(() => {
     return new Date(article.time * 1000).toLocaleString();
@@ -13,12 +19,11 @@ const ArticleItem = React.memo(({ article, style }) => {
       className="article-item" 
       data-testid="article-item"
       style={{
-        ...style,
         position: 'absolute',
         top: 0,
         left: 0,
         width: '100%',
-        height: `${style.height}px`,
+        height: `${style.height}`,
         transform: `translateY(${style.transform}px)`,
         padding: '1.5rem',
         boxSizing: 'border-box'
@@ -26,7 +31,7 @@ const ArticleItem = React.memo(({ article, style }) => {
     >
       <h3>{article.title}</h3>
       <p>By: {article.by} | Score: {article.score}</p>
-      <a href={article.url} target="_blank" rel="noopener noreferrer">Read article</a>
+      {article.url && <a href={article.url} target="_blank" rel="noopener noreferrer">Read article</a>}
       <div className="meta">
         <span>Published: {formattedDate}</span>
       </div>
@@ -34,8 +39,12 @@ const ArticleItem = React.memo(({ article, style }) => {
   );
 });
 
-const ArticleList = ({ articles }) => {
-  const parentRef = useRef();
+interface ArticleListProps {
+  articles: HNItem[];
+}
+
+const ArticleList: React.FC<ArticleListProps> = ({ articles }) => {
+  const parentRef = useRef<HTMLDivElement>(null);
 
   // Optimized: List virtualization with @tanstack/react-virtual
   const rowVirtualizer = useVirtualizer({

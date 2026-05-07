@@ -1,20 +1,21 @@
 import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
-import sortBy from 'lodash/sortBy'; // Optimized: cherry-picked import
+import sortBy from 'lodash/sortBy';
+import { HNItem } from './types';
 
 // Optimized: Code splitting - Lazy load the heavy list component
 const ArticleList = lazy(() => import('./components/ArticleList'));
 
-const App = () => {
-  const [articles, setArticles] = useState([]);
-  const [filter, setFilter] = useState('');
-  const [loading, setLoading] = useState(true);
+const App: React.FC = () => {
+  const [articles, setArticles] = useState<HNItem[]>([]);
+  const [filter, setFilter] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchAllStories = async () => {
       try {
         setLoading(true);
         const response = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
-        const storyIds = await response.json();
+        const storyIds: number[] = await response.json();
         
         // Optimized: Parallelized data fetching with Promise.all
         const limitedIds = storyIds.slice(0, 500);
@@ -22,7 +23,7 @@ const App = () => {
           fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(res => res.json())
         );
         
-        const stories = await Promise.all(storyPromises);
+        const stories: HNItem[] = await Promise.all(storyPromises);
         setArticles(stories.filter(s => s !== null));
       } catch (error) {
         console.error('Error fetching stories:', error);
@@ -34,7 +35,7 @@ const App = () => {
     fetchAllStories();
   }, []);
 
-  const handleFilterChange = (e) => {
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilter(e.target.value);
   };
 
