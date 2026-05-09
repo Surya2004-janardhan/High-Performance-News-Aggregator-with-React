@@ -62,6 +62,16 @@ To preview the production build:
 npm run preview
 ```
 
+## GitHub Pages Deployment
+
+This project is configured to deploy to GitHub Pages via GitHub Actions on pushes to `main`.
+
+1. In the repository settings, set **Pages** → **Source** to **GitHub Actions**.
+2. Push to `main` and the workflow will build and deploy the `dist` output.
+
+If you fork or rename the repository, update the `base` path in `vite.config.ts` to
+match `/<your-repo-name>/` so asset URLs resolve correctly on Pages.
+
 ## Performance Audit
 
 Detailed performance metrics, root cause analysis, and optimization results can be found in [PERFORMANCE.md](./PERFORMANCE.md).
